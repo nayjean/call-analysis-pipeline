@@ -1,3 +1,7 @@
+import json
+import os
+
+
 def read_transcript(filename):
     with open(filename, "r") as file:
         return file.read()
@@ -43,3 +47,11 @@ print("Total words:", total_words)
 print()
 for result in results:
     print(result)
+
+os.makedirs("output", exist_ok=True)
+
+with open("output/results.json", "w") as file:
+    json.dump(results, file, indent=2)
+
+print()
+print("Saved results to output/results.json")
