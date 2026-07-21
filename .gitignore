@@ -8,3 +8,6 @@ output/
 *.wav
 *.m4a
 *.zip
+*.xlsx
+*.xls
+*.csv

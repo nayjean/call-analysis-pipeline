@@ -3,10 +3,12 @@ import json
 from transformers import pipeline
 
 CANDIDATE_INTENTS = [
-    "order status",
+    "purchase completed",
+    "not interested",
+    "callback requested",
+    "product inquiry",
     "complaint",
-    "refund request",
-    "technical issue",
+    "technical or payment issue",
     "general inquiry",
     "escalation request"
 ]
@@ -36,19 +38,20 @@ def classify_intent(text):
     }
 
 
-with open("output/transcript.json", "r") as file:
-    transcript = json.load(file)
+if __name__ == "__main__":
+    with open("output/transcript.json", "r") as file:
+        transcript = json.load(file)
 
-full_text = " ".join(entry["text"] for entry in transcript)
-print("Full call text:")
-print(full_text)
-print()
+    full_text = " ".join(entry["text"] for entry in transcript)
+    print("Full call text:")
+    print(full_text)
+    print()
 
-call_intent = classify_intent(full_text)
-print("Call-level intent:", call_intent)
+    call_intent = classify_intent(full_text)
+    print("Call-level intent:", call_intent)
 
-with open("output/intent.json", "w") as file:
-    json.dump(call_intent, file, indent=2)
+    with open("output/intent.json", "w") as file:
+        json.dump(call_intent, file, indent=2)
 
-print()
-print("Saved intent result to output/intent.json")
+    print()
+    print("Saved intent result to output/intent.json")

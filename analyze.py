@@ -26,24 +26,25 @@ def classify_sentiment(text):
     }
 
 
-with open("output/transcript.json", "r") as file:
-    transcript = json.load(file)
+if __name__ == "__main__":
+    with open("output/transcript.json", "r") as file:
+        transcript = json.load(file)
 
-analyzed = []
-for entry in transcript:
-    sentiment = classify_sentiment(entry["text"])
-    combined = {
-        "start": entry["start"],
-        "end": entry["end"],
-        "text": entry["text"],
-        "sentiment": sentiment
-    }
-    analyzed.append(combined)
-    print(combined)
+    analyzed = []
+    for entry in transcript:
+        sentiment = classify_sentiment(entry["text"])
+        combined = {
+            "start": entry["start"],
+            "end": entry["end"],
+            "text": entry["text"],
+            "sentiment": sentiment
+        }
+        analyzed.append(combined)
+        print(combined)
 
-os.makedirs("output", exist_ok=True)
-with open("output/analysis.json", "w") as file:
-    json.dump(analyzed, file, indent=2)
+    os.makedirs("output", exist_ok=True)
+    with open("output/analysis.json", "w") as file:
+        json.dump(analyzed, file, indent=2)
 
-print()
-print("Saved analysis to output/analysis.json")
+    print()
+    print("Saved analysis to output/analysis.json")
