@@ -4,3 +4,6 @@ __pycache__/
 .env
 .claude/
 output/
+*.mp3
+*.wav
+*.m4a
