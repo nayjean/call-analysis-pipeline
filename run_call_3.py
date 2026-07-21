@@ -4,6 +4,7 @@ import os
 from analyze import classify_sentiment
 from trend import compute_average, compute_trend
 from intent import classify_intent
+from escalate import assess_escalation
 
 with open("output/transcript_call_3.json", "r", encoding="utf-8") as file:
     transcript = json.load(file)
@@ -41,14 +42,19 @@ overall_confidence = "low" if uncertain_ratio > 0.5 else "high"
 full_text = " ".join(entry["text"] for entry in transcript)
 call_intent = classify_intent(full_text)
 
+overall_average_sentiment = compute_average(scores)
+trend = compute_trend(scores)
+escalation = assess_escalation(analyzed_lines, trend, overall_average_sentiment)
+
 summary = {
     "total_lines": total_lines,
     "uncertain_lines": uncertain_count,
     "uncertain_ratio": round(uncertain_ratio, 2),
-    "overall_average_sentiment": compute_average(scores),
-    "trend": compute_trend(scores),
+    "overall_average_sentiment": overall_average_sentiment,
+    "trend": trend,
     "overall_confidence": overall_confidence,
-    "intent": call_intent
+    "intent": call_intent,
+    "escalation": escalation
 }
 
 print("SUMMARY:", summary)
