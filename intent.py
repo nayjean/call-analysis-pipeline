@@ -3,14 +3,14 @@ import json
 from transformers import pipeline
 
 CANDIDATE_INTENTS = [
-    "purchase completed",
-    "not interested",
-    "callback requested",
-    "product inquiry",
-    "complaint",
-    "technical or payment issue",
-    "general inquiry",
-    "escalation request"
+    "order or shipping status",
+    "return or refund request",
+    "product defect complaint",
+    "exchange or alteration request",
+    "cancellation request",
+    "store related inquiry",
+    "not interested or callback requested",
+    "general inquiry"
 ]
 
 INTENT_CONFIDENCE_THRESHOLD = 0.4
