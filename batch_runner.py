@@ -80,13 +80,18 @@ if __name__ == "__main__":
     for filename in audio_files:
         filepath = os.path.join(INPUT_FOLDER, filename)
         call_id = os.path.splitext(filename)[0]
+        output_path = os.path.join(OUTPUT_FOLDER, f"{call_id}.json")
+
+        if os.path.exists(output_path):
+            print(f"Skipping {filename} (already processed)")
+            print()
+            continue
 
         print(f"Processing {filename}...")
 
         try:
             result = process_call(filepath)
 
-            output_path = os.path.join(OUTPUT_FOLDER, f"{call_id}.json")
             with open(output_path, "w", encoding="utf-8") as file:
                 json.dump(result, file, indent=2)
 
