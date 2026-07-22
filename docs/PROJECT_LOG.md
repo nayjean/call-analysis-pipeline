@@ -156,6 +156,31 @@ This was the core "designed, not just wrapped" part of the project. Broken into 
 
 ---
 
+---
+
+## Phase 6 — Validation testing
+
+**What was done:**
+- Built `output/ground_truth_template.csv` listing all 11 successfully-analyzed calls; user manually listened to each and filled in their own honest judgment (`expected_escalation`, `expected_trend`, `expected_intent`) — explicitly noted as expert judgment, not lab-grade ground truth.
+- Built `validate.py`: auto-scores escalation and trend against ground truth (categories align directly), and shows intent **side-by-side** rather than auto-scoring it, since the ground-truth wording (`"check up"`, `"enquiry"`) uses completely different vocabulary than our candidate intent categories — an automated match there would be meaningless.
+
+**Initial results:** escalation accuracy 45% (5/11), trend accuracy 64% (7/11).
+
+**Diagnosed a real bug, not just "low accuracy":** `audio_7` was wrongly flagged `Medium` (ground truth: `Low`, "normal call regarding delivery delay"). Root cause traced to the exact matched line — an agent saying *"I'll escalate this to the courier team"* — routine procedural language, not genuine customer distress. Checked the same keyword's usage in `audio_4` (ground truth: `High`) and found near-identical agent phrasing, confirming the word "escalate" alone is a **low-precision signal in this business context**, since Indian call-center agents apparently use it as standard procedural vocabulary regardless of call severity.
+
+**Fix:** split `ESCALATION_KEYWORDS` into `STRONG_KEYWORDS` (`angry`, `unacceptable`, `manager` — weight 40) vs `WEAK_KEYWORDS` (`frustrat`, `escalate`, `complaint` — weight reduced to 15, no longer enough alone to cross the `Medium` threshold). Re-scored all existing results without re-calling Deepgram/sentiment/intent models (`rescore_escalation.py` reuses already-saved per-line sentiment data — avoids wasting API quota on a change that only affects the escalation-scoring step).
+
+**Result after fix:** escalation accuracy improved 45% → 55% (6/11) — `audio_7` corrected, nothing else regressed, exactly as predicted before making the change.
+
+**Real, undismissed limitation found:** `audio_4` (ground truth: `High`, a genuine delivery-issue complaint) is still scored `Low`. Investigated directly: its sentiment on the relevant line was `"uncertain"` (below confidence threshold), its trend measured `"stable"` not `"declining"`, and its only keyword hit was the now-downweighted ambiguous "escalate" phrase. None of the current signals capture this call's real severity. Checked whether any of the 11 calls contain unambiguous strong-distress language (`"angry"`, `"unacceptable"`, `"manager"`, `"complaint"`) — **none do** — meaning the `"High"` tier is also functionally unvalidated on this dataset, not just theoretically hard to reach.
+
+**Honest conclusion for the report:** the fix is real and evidence-based, not guesswork — but it doesn't solve everything, and that's stated plainly rather than hidden. A likely next step (out of scope for now): speaker diarization (separating agent vs. customer speech) would let escalation keywords be weighted only when the *customer* says them, which is the actual missing signal here.
+
+**Gaps / left for later:**
+- Only 11 calls validated, and ground truth is single-person subjective judgment, not independently verified — worth stating this limitation explicitly in the report rather than presenting accuracy numbers as more rigorous than they are.
+- Trend accuracy (64%) wasn't investigated as deeply as escalation — worth a similar root-cause pass if time allows.
+- Intent still has no quantitative accuracy score, only qualitative side-by-side comparison — the category-vocabulary mismatch between ground truth and candidate labels would need to be resolved (e.g., mapping expected free-text answers to the closest candidate category) for a real accuracy number.
+
 ## Open items carried into Phase 4 and beyond
 
 1. Decide `faster-whisper` vs. Deepgram (or both, with fallback logic) for the batch pipeline.

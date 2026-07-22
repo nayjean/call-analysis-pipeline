@@ -1,6 +1,8 @@
-ESCALATION_KEYWORDS = ["frustrat", "escalate", "angry", "unacceptable", "manager", "complaint"]
+STRONG_KEYWORDS = ["angry", "unacceptable", "manager"]
+WEAK_KEYWORDS = ["frustrat", "escalate", "complaint"]
 
-KEYWORD_WEIGHT = 40
+STRONG_KEYWORD_WEIGHT = 40
+WEAK_KEYWORD_WEIGHT = 15
 NEGATIVE_SENTIMENT_WEIGHT = 30
 DECLINING_TREND_WEIGHT = 20
 NEGATIVE_RATIO_WEIGHT = 10
@@ -9,13 +11,13 @@ NEGATIVE_SENTIMENT_THRESHOLD = -0.3
 NEGATIVE_RATIO_THRESHOLD = 0.3
 
 
-def count_keyword_hits(lines):
+def find_keyword_matches(lines, keywords):
     hits = 0
     matched_lines = []
 
     for entry in lines:
         text = entry["text"].lower()
-        for keyword in ESCALATION_KEYWORDS:
+        for keyword in keywords:
             if keyword in text:
                 hits += 1
                 matched_lines.append(entry["text"])
@@ -37,10 +39,15 @@ def assess_escalation(analyzed_lines, trend, overall_average_sentiment):
     score = 0
     reasons = []
 
-    keyword_hits, matched_lines = count_keyword_hits(analyzed_lines)
-    if keyword_hits > 0:
-        score += KEYWORD_WEIGHT
-        reasons.append(f"{keyword_hits} line(s) matched escalation keywords: {matched_lines}")
+    strong_hits, strong_matches = find_keyword_matches(analyzed_lines, STRONG_KEYWORDS)
+    weak_hits, weak_matches = find_keyword_matches(analyzed_lines, WEAK_KEYWORDS)
+
+    if strong_hits > 0:
+        score += STRONG_KEYWORD_WEIGHT
+        reasons.append(f"{strong_hits} line(s) matched strong escalation keywords: {strong_matches}")
+    elif weak_hits > 0:
+        score += WEAK_KEYWORD_WEIGHT
+        reasons.append(f"{weak_hits} line(s) matched weak/ambiguous escalation keywords: {weak_matches}")
 
     if overall_average_sentiment is not None and overall_average_sentiment < NEGATIVE_SENTIMENT_THRESHOLD:
         score += NEGATIVE_SENTIMENT_WEIGHT
