@@ -43,6 +43,35 @@ def transcribe_with_deepgram(filename):
     return transcript
 
 
+def transcribe_with_diarization(filename):
+    with open(filename, "rb") as audio_file:
+        audio_data = audio_file.read()
+
+    headers = {
+        "Authorization": f"Token {API_KEY}",
+        "Content-Type": "audio/mp3"
+    }
+
+    params = dict(PARAMS)
+    params["diarize"] = "true"
+
+    response = requests.post(URL, params=params, headers=headers, data=audio_data)
+    result = response.json()
+
+    utterances = result["results"]["utterances"]
+
+    transcript = []
+    for utterance in utterances:
+        transcript.append({
+            "start": utterance["start"],
+            "end": utterance["end"],
+            "text": utterance["transcript"],
+            "speaker": utterance.get("speaker")
+        })
+
+    return transcript
+
+
 if __name__ == "__main__":
     transcript = transcribe_with_deepgram("sample_call_3.mp3")
 

@@ -26,6 +26,17 @@ def find_keyword_matches(lines, keywords):
     return hits, matched_lines
 
 
+def get_customer_lines(lines):
+    speakers = {entry.get("speaker") for entry in lines}
+    speakers.discard(None)
+
+    if len(speakers) < 2:
+        return lines
+
+    agent_speaker = lines[0]["speaker"]
+    return [entry for entry in lines if entry["speaker"] != agent_speaker]
+
+
 def compute_negative_ratio(lines):
     trusted_lines = [e for e in lines if e["sentiment"]["trusted_label"] != "uncertain"]
     if len(trusted_lines) == 0:
@@ -39,8 +50,9 @@ def assess_escalation(analyzed_lines, trend, overall_average_sentiment):
     score = 0
     reasons = []
 
-    strong_hits, strong_matches = find_keyword_matches(analyzed_lines, STRONG_KEYWORDS)
-    weak_hits, weak_matches = find_keyword_matches(analyzed_lines, WEAK_KEYWORDS)
+    customer_lines = get_customer_lines(analyzed_lines)
+    strong_hits, strong_matches = find_keyword_matches(customer_lines, STRONG_KEYWORDS)
+    weak_hits, weak_matches = find_keyword_matches(customer_lines, WEAK_KEYWORDS)
 
     if strong_hits > 0:
         score += STRONG_KEYWORD_WEIGHT

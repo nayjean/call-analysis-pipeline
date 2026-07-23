@@ -194,8 +194,16 @@ Diagnosed the likely cause: zero-shot classifiers test each label as a hypothesi
 
 **Lesson for the report:** zero-shot classification quality is highly sensitive to label *wording*, not just label *coverage* — a category can be conceptually correct and still fail if it's phrased unnaturally. This is a good, specific, testable example of iterative ML engineering (hypothesis → test → wrong → diagnose → retest → confirm), not guesswork.
 
-**#2: Speaker diarization — recommended, not yet implemented.**
-Directly inspired by KOGO's `transcribe_audio`, which uses diarization settings. Would let escalation keyword-matching count only customer speech, providing a principled fix for the `audio_4`/`audio_7` ambiguity (Phase 6 validation) instead of the keyword-reweighting workaround currently in place. Requires re-calling Deepgram with `diarize=true` for every call (real API cost), so intentionally not run broadly without deciding scope first — logged here as the next concrete step, not abandoned.
+**#2: Speaker diarization — implemented.**
+Directly inspired by KOGO's `transcribe_audio`, which uses diarization settings. Added `transcribe_with_diarization()` (Deepgram `diarize=true`), a `get_customer_lines()` heuristic in `escalate.py` (assumes the first speaker in an outbound call is the agent), and wired the whole batch pipeline to use it — full re-transcription of all 13 calls with the user's explicit approval given the real API cost involved.
+
+**Validation test on `audio_4`/`audio_7` before full rollout:** diarization correctly separated agent from customer speech in both calls, and confirmed the earlier hypothesis exactly — in both calls, the "escalate" keyword was said only by the *agent*, never the customer. Customer-only keyword filtering reduced both to zero keyword hits.
+
+**Deeper finding from this test, not originally hypothesized:** manually inspecting `audio_4`'s customer-only lines showed genuine, human-visible frustration (refusing the package, demanding an explanation, repeatedly cutting off the agent) — but the sentiment model scored nearly all of it `"uncertain"` or flat `"neutral"` (one line even came back `"positive"`, likely a transcription-segmentation artifact). This means the deeper problem behind `audio_4` isn't which speaker said a keyword — it's that the **sentiment model itself doesn't reliably detect frustration expressed indirectly** (refusal, rhetorical questions, interruption) in code-switched Hindi-English speech. Diarization can't fix a model-capability gap.
+
+**Result after full rollout:** escalation accuracy held at 55% (6/11) — unchanged from the previous keyword-reweighting fix, but the underlying mechanism is now more correct and generalizable: it excludes escalation language specifically *because* the agent said it, not through a blanket downweighting that would also incorrectly discount a customer genuinely saying "escalate" in anger. Same score on this small test set, better-justified mechanism — an important distinction to state honestly rather than claim an accuracy win that didn't happen.
+
+**Gap surfaced, not yet addressed:** the sentiment model's blind spot for indirect/rhetorical frustration in Hindi-English speech is now a well-evidenced, specific limitation (not a vague "could be better") — a strong candidate for the report's "future work" section, e.g. trying a different sentiment model, or supplementing with more diverse Hindi-specific example phrases.
 
 ## Open items carried into Phase 4 and beyond
 

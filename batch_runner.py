@@ -1,7 +1,7 @@
 import json
 import os
 
-from deepgram_transcribe import transcribe_with_deepgram
+from deepgram_transcribe import transcribe_with_diarization
 from analyze import classify_sentiment
 from trend import compute_average, compute_trend
 from intent import classify_intent
@@ -13,7 +13,7 @@ AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a")
 
 
 def process_call(filepath):
-    transcript = transcribe_with_deepgram(filepath)
+    transcript = transcribe_with_diarization(filepath)
 
     if len(transcript) == 0:
         return {
@@ -33,6 +33,7 @@ def process_call(filepath):
             "start": entry["start"],
             "end": entry["end"],
             "text": entry["text"],
+            "speaker": entry.get("speaker"),
             "sentiment": sentiment
         })
 
