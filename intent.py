@@ -3,6 +3,7 @@ import json
 from transformers import pipeline
 
 CANDIDATE_INTENTS = [
+    "check-in call",
     "order or shipping status",
     "return or refund request",
     "product defect complaint",

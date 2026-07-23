@@ -181,6 +181,22 @@ This was the core "designed, not just wrapped" part of the project. Broken into 
 - Trend accuracy (64%) wasn't investigated as deeply as escalation — worth a similar root-cause pass if time allows.
 - Intent still has no quantitative accuracy score, only qualitative side-by-side comparison — the category-vocabulary mismatch between ground truth and candidate labels would need to be resolved (e.g., mapping expected free-text answers to the closest candidate category) for a real accuracy number.
 
+---
+
+## Phase 6 — Post-comparison improvements (inspired by KOGO comparison)
+
+**#1: Missing "check-in call" intent category.**
+Noticed while reviewing the KOGO comparison that the ground-truth CSV showed **9 of 11 real calls** labeled `"check up"` by the user — yet `CANDIDATE_INTENTS` had no category resembling this at all. Added one and re-ran `intent.py` (via `rescore_intent.py`, reusing saved transcripts — no Deepgram cost, only the free local model re-ran).
+
+First attempt used the wordy label `"routine check-in or courtesy follow-up call"` — this **made things worse**: it never won as the top guess on any call, and two previously-confident calls (`audio_5`, `audio_6`) *regressed* to `"uncertain"` because adding a 9th category diluted the model's confidence distribution across more options. Real negative result, documented rather than hidden.
+
+Diagnosed the likely cause: zero-shot classifiers test each label as a hypothesis ("this text is about {label}") — overly long/formal phrasing may match real speech less directly than one modeled on the user's own natural wording. Tried a simpler label, `"check-in call"`, and confidence jumped immediately (0.59 on a quick single-call test). Re-ran the full batch: `audio_10` and `audio_5` (both real `"check up"` calls) are now correctly and confidently classified, with no regressions elsewhere.
+
+**Lesson for the report:** zero-shot classification quality is highly sensitive to label *wording*, not just label *coverage* — a category can be conceptually correct and still fail if it's phrased unnaturally. This is a good, specific, testable example of iterative ML engineering (hypothesis → test → wrong → diagnose → retest → confirm), not guesswork.
+
+**#2: Speaker diarization — recommended, not yet implemented.**
+Directly inspired by KOGO's `transcribe_audio`, which uses diarization settings. Would let escalation keyword-matching count only customer speech, providing a principled fix for the `audio_4`/`audio_7` ambiguity (Phase 6 validation) instead of the keyword-reweighting workaround currently in place. Requires re-calling Deepgram with `diarize=true` for every call (real API cost), so intentionally not run broadly without deciding scope first — logged here as the next concrete step, not abandoned.
+
 ## Open items carried into Phase 4 and beyond
 
 1. Decide `faster-whisper` vs. Deepgram (or both, with fallback logic) for the batch pipeline.
